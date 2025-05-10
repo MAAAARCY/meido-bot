@@ -20,9 +20,24 @@
     "typescript-eslint": "^8.32.0"
   },
   "dependencies": {
-    "@google/genai": "^0.13.0",
+    "@discordjs/voice": "^0.18.0",
+    "@google/generative-ai": "^0.24.1",
+    "avconv": "^3.1.0",
+    "axios": "^1.6.7",
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
+    "ffmpeg": "^0.0.4",
+    "ffmpeg-static": "^5.2.0",
+    "node-fetch": "^3.3.2",
+    "play-sound": "^1.1.6",
     "request": "^2.88.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MAAAARCY/meido_bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MAAAARCY/meido_bot/issues"
+  },
+  "homepage": "https://github.com/MAAAARCY/meido_bot#readme"
 }
