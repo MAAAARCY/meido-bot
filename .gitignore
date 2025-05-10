@@ -1,0 +1,12 @@
+node_modules/
+
+.env
+.env.*
+
+package-lock.json
+
+build/ 
+
+eslint.json
+eslint.config.mjs
+
