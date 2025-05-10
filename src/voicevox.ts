@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import 'dotenv/config'
 import player from 'play-sound';
 
-export class VoiceVoxManager {
+export class VoiceVoxModel {
     private readonly baseUrl: string;
     private readonly speakerId: number;
     private readonly audioDir: string;

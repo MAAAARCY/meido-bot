@@ -2,7 +2,7 @@
 import { GatewayIntentBits, Client, Partials, Message, CommandInteraction, ApplicationCommandOptionType } from 'discord.js';
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, entersState } from '@discordjs/voice';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { VoiceVoxManager } from './voicevox';
+import { VoiceVoxModel } from './voicevox';
 import 'dotenv/config';
 
 const client = new Client({
@@ -26,7 +26,7 @@ const model = genAI.getGenerativeModel({
   generationConfig: { responseMimeType: "application/json" }
 });
 
-const voiceVox = new VoiceVoxManager();
+const voiceVox = new VoiceVoxModel();
 
 //Botがきちんと起動したか確認
 client.once('ready', () => {
@@ -109,7 +109,7 @@ client.on('interactionCreate', async (interaction) => {
 async function handleChatCommand(interaction: CommandInteraction) {
     const content = interaction.options.get('text')?.value as string;
     const result = await model.generateContent([
-        `あなたは親切なメイドAIです。以下の質問に日本語で答えてください。二人称は常にご主人様でお願いします。${content}`
+        `あなたは親切なメイドAIです。以下の会話に日本語で返答してください。二人称は常にご主人様でお願いします。会話内容:${content}`
     ]);
     const json = JSON.parse(result.response.text());
 
@@ -161,7 +161,6 @@ async function handleVoiceChatCommand(interaction: CommandInteraction) {
         connection.subscribe(player);
 
         const audioPath = await voiceVox.getAudioFilePath(response);
-
         const resource = createAudioResource(audioPath);
         player.play(resource);
 
@@ -234,11 +233,7 @@ async function handleSpeakCommand(interaction: CommandInteraction) {
         connection.subscribe(player);
 
         // ここで実際にはテキストを音声に変換する処理が必要
-        // 例として、音声ファイルを再生する方法:
         const audioPath = await voiceVox.getAudioFilePath(text);
-        
-        // await setTimeout(3000);
-
         const resource = createAudioResource(audioPath);
         player.play(resource);
 
