@@ -1,5 +1,6 @@
 //必要なパッケージをインポートする
 import { GatewayIntentBits, Client, Partials, Message } from 'discord.js'
+import { GoogleGenAI } from '@google/genai'
 import 'dotenv/config'
 
 const client = new Client({
@@ -12,6 +13,11 @@ const client = new Client({
   ],
   partials: [Partials.Message, Partials.Channel],
 })
+
+const genai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+})
+
 
 //Botがきちんと起動したか確認
 client.once('ready', () => {
@@ -29,9 +35,16 @@ client.on('messageCreate', async (message: Message) => {
         message.reply(date1.toLocaleString());
     }
 
+    // /q [質問]でGeminiからのレスポンスを受け取る
     if (message.content.startsWith('/q ')) {
         const content = message.content.slice(3);
-        message.reply(content);
+        const response = await genai.models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: content,
+        });
+        // console.log(response);
+        const text = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "No response generated";
+        message.reply(text);
     }
 })
 
