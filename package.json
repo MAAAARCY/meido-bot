@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "- .envファイルを作成し以下のようにトークンを設定してください\r ```\r DISCORD_TOKEN = 'トークンを入力'\r ```\r - DISCORD_TOKENを取得する手順は以下のサイトから確認できます．\r     - https://discord.com/developers/docs/quick-start/getting-started\r     - YOUR_BOT_TOKENの設定のみ行ってください(YOUR_APP_ID, YOUR_PUBLIC_KEYは不要です)\r     - DISCORD_TOKENはYOUR_BOT_TOKENの事を指しています",
   "devDependencies": {
     "@eslint/js": "^9.26.0",
     "eslint": "^9.26.0",
@@ -20,9 +20,17 @@
     "typescript-eslint": "^8.32.0"
   },
   "dependencies": {
-    "@google/genai": "^0.13.0",
+    "@google/generative-ai": "^0.24.1",
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
     "request": "^2.88.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MAAAARCY/meido_bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MAAAARCY/meido_bot/issues"
+  },
+  "homepage": "https://github.com/MAAAARCY/meido_bot#readme"
 }

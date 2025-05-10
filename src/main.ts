@@ -1,6 +1,6 @@
 //必要なパッケージをインポートする
 import { GatewayIntentBits, Client, Partials, Message } from 'discord.js'
-import { GoogleGenAI } from '@google/genai'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 import 'dotenv/config'
 
 const client = new Client({
@@ -14,9 +14,14 @@ const client = new Client({
   partials: [Partials.Message, Partials.Channel],
 })
 
-const genai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-})
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY!
+)
+
+const model = genAI.getGenerativeModel({
+  model: "gemini-2.0-flash",
+  generationConfig: { responseMimeType: "application/json" }
+});
 
 
 //Botがきちんと起動したか確認
@@ -29,22 +34,22 @@ client.once('ready', () => {
 
 //!timeと入力すると現在時刻を返信するように
 client.on('messageCreate', async (message: Message) => {
+    console.log(message.content);
     if (message.author.bot) return
-    if (message.content === '!time') {
-        const date1 = new Date();
-        message.reply(date1.toLocaleString());
-    }
 
     // /q [質問]でGeminiからのレスポンスを受け取る
-    if (message.content.startsWith('/q ')) {
+    if (message.content.startsWith('/chat ')) {
         const content = message.content.slice(3);
-        const response = await genai.models.generateContent({
-            model: "gemini-2.0-flash",
-            contents: content,
-        });
-        // console.log(response);
-        const text = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "No response generated";
-        message.reply(text);
+        const result = await model.generateContent([
+            `あなたは親切なメイドAIです。以下の質問に日本語で答えてください。二人称は常にご主人様でお願いします。${content}`
+        ]);
+        const json = JSON.parse(result.response.text());
+
+        console.log(result == null)
+        if (json["response"] != null) {
+            
+            message.reply(json["response"]);
+        }
     }
 })
 
