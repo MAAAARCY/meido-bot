@@ -1,7 +1,6 @@
 //必要なパッケージをインポートする
 import { GatewayIntentBits, Client, Partials, Message, CommandInteraction, ApplicationCommandOptionType } from 'discord.js';
 import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, entersState } from '@discordjs/voice';
-import { setTimeout } from "node:timers/promises";
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { VoiceVoxManager } from './voicevox';
 import 'dotenv/config';
@@ -66,38 +65,8 @@ client.once('ready', () => {
             name: 'leave',
             description: 'ボイスチャンネルから退出します'
         }
-    ], process.env.DISCORD_GUILD_ID!);
+    ], process.env.DISCORD_SERVER_ID!); //TODO: 開発版とリリース版で設定を変更する
 })
-
-// //!timeと入力すると現在時刻を返信するように
-// client.on('messageCreate', async (message: Message) => {
-//     // console.log(message.content);
-//     if (message.author.bot) return
-
-//     // /q [質問]でGeminiからのレスポンスを受け取る
-//     if (message.content.startsWith('/chat ')) {
-//         const content = message.content.slice(3);
-//         const result = await model.generateContent([
-//             `あなたは親切なメイドAIです。以下の質問に日本語で答えてください。二人称は常にご主人様でお願いします。${content}`
-//         ]);
-//         const json = JSON.parse(result.response.text());
-
-//         if (json["response"] != null) {
-//             const response = json["response"];
-//             message.reply(response);
-
-//             // try {
-//             //     const audioPath = await voiceVox.getAudioFilePath(response);
-//             //     console.log(audioPath);
-//             //     // await voiceVox.playAudio(audioPath);
-//             //     // await voiceVox.cleanup(audioPath);
-//             // } catch (error) {
-//             //     console.error('音声再生エラー:');
-//             // }
-
-//         }
-//     }
-// })
 
 // スラッシュコマンドの処理
 client.on('interactionCreate', async (interaction) => {
@@ -170,6 +139,7 @@ async function handleJoinCommand(interaction: CommandInteraction) {
     }
 }
 
+// speakコマンドの処理
 async function handleSpeakCommand(interaction: CommandInteraction) {
     const text = interaction.options.get('text')?.value as string;
     
