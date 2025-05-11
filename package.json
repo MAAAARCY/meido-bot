@@ -36,10 +36,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MAAAARCY/meido_bot.git"
+    "url": "git+https://github.com/MAAAARCY/meido-bot.git"
   },
   "bugs": {
-    "url": "https://github.com/MAAAARCY/meido_bot/issues"
+    "url": "https://github.com/MAAAARCY/meido-bot/issues"
   },
-  "homepage": "https://github.com/MAAAARCY/meido_bot#readme"
+  "homepage": "https://github.com/MAAAARCY/meido-bot#readme"
 }
