@@ -1,31 +1,20 @@
-//必要なパッケージをインポートする
-import { GatewayIntentBits, Client, Partials, Message } from 'discord.js';
-import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, entersState } from '@discordjs/voice';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { VoiceVoxManager } from './voicevox';
-import 'dotenv/config';
+import { GatewayIntentBits, Client, Partials, ApplicationCommandOptionType } from 'discord.js';
+
+import { DiscordBot } from './discordBot';
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-  ],
-  partials: [Partials.Message, Partials.Channel],
+    intents: [
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates
+    ],
+    partials: [Partials.Message, Partials.Channel],
 });
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY!
-);
-
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
-  generationConfig: { responseMimeType: "application/json" }
-});
-
-const voiceVox = new VoiceVoxManager();
+const discordBot = new DiscordBot();
 
 //Botがきちんと起動したか確認
 client.once('ready', () => {
@@ -33,36 +22,79 @@ client.once('ready', () => {
     if(client.user){
         console.log(client.user.tag);
     }
-})
 
-//!timeと入力すると現在時刻を返信するように
-client.on('messageCreate', async (message: Message) => {
-    // console.log(message.content);
-    if (message.author.bot) return
-
-    // /q [質問]でGeminiからのレスポンスを受け取る
-    if (message.content.startsWith('/chat ')) {
-        const content = message.content.slice(3);
-        const result = await model.generateContent([
-            `あなたは親切なメイドAIです。以下の質問に日本語で答えてください。二人称は常にご主人様でお願いします。${content}`
-        ]);
-        const json = JSON.parse(result.response.text());
-
-        if (json["response"] != null) {
-            const response = json["response"];
-            message.reply(response);
-
-            // try {
-            //     const audioPath = await voiceVox.getAudioFilePath(response);
-            //     console.log(audioPath);
-            //     // await voiceVox.playAudio(audioPath);
-            //     // await voiceVox.cleanup(audioPath);
-            // } catch (error) {
-            //     console.error('音声再生エラー:');
-            // }
+    // スラッシュコマンドを登録
+    client.application?.commands.set([
+        {
+            name: 'speak',
+            description: '指定したテキストを音声で読み上げます',
+            options: [{
+                name: 'text',
+                type: ApplicationCommandOptionType.String,
+                description: '読み上げるテキスト',
+                required: true
+            }]
+        },
+        {
+            name: 'chat',
+            description: '可愛いメイドと会話することができます',
+            options: [{
+                name: 'text',
+                type: ApplicationCommandOptionType.String,
+                description: '会話内容',
+                required: true
+            }]
+        },
+        {
+            name: 'voice_chat',
+            description: '可愛いメイドとボイスチャンネル内で会話することができます',
+            options: [{
+                name: 'text',
+                type: ApplicationCommandOptionType.String,
+                description: '会話内容',
+                required: true
+            }]
+        },
+        {
+            name: 'join',
+            description: 'メイドをボイスチャンネルに参加させます'
+        },
+        {
+            name: 'leave',
+            description: 'メイドをボイスチャンネルから退出させます'
         }
-    }
-})
+    ], process.env.DISCORD_SERVER_ID!);
+});
 
-//ボット作成時のトークンでDiscordと接続
+// スラッシュコマンドの処理
+client.on('interactionCreate', async (interaction) => {
+    if (!interaction.isCommand()) return;
+    
+    const { commandName } = interaction;
+
+    try {
+        switch (commandName) {
+            case 'chat':
+                await discordBot.handleChatCommand(interaction);
+                break;
+            case 'voice_chat':
+                await discordBot.handleVoiceChatCommand(interaction);
+                break;
+            case 'join':
+                await discordBot.handleJoinCommand(interaction);
+                break;
+            case 'speak':
+                await discordBot.handleSpeakCommand(interaction);
+                break;
+            case 'leave':
+                await discordBot.handleLeaveCommand(interaction);
+                break;
+        }
+    } catch (error) {
+        console.error('コマンド実行中にエラーが発生しました:', error);
+        await interaction.reply('コマンドの実行中にエラーが発生しました。');
+    }
+});
+
+// ボット作成時のトークンでDiscordと接続
 client.login(process.env.DISCORD_TOKEN);

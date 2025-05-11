@@ -1,27 +1,32 @@
 import * as fs from 'node:fs/promises';
 import { resolve } from 'node:path';
 import 'dotenv/config'
-import player from 'play-sound';
 
-export class VoiceVoxManager {
+// VoiceVoxのモデル
+export class VoiceVoxModel {
     private readonly baseUrl: string;
     private readonly speakerId: number;
     private readonly audioDir: string;
-    private readonly audioPlayer: any;
 
+    // コンストラクタ
     constructor(baseUrl: string = 'http://localhost:50021', speakerId: number = 14) {
         this.baseUrl = baseUrl;
         this.speakerId = speakerId;
         this.audioDir = './audio';
-        this.audioPlayer = player();
-        // 音声ファイル保存用ディレクトリの作成
-        // if (!fs.existsAsync(this.audioDir)) {
-        //     fs.mkdirSync(this.audioDir, { recursive: true });
-        // }
+        this.ensureAudioDirExists();
     }
 
-    private async createAudioQuery(text: string): Promise<JSON> {
-        // テキストを音声クエリに変換
+    // 音声ディレクトリの作成
+    private async ensureAudioDirExists(): Promise<void> {
+        try {
+            await fs.mkdir(this.audioDir, { recursive: true });
+        } catch (error) {
+            console.error('音声ディレクトリの作成に失敗しました:', error);
+        }
+    }
+
+    // テキストを音声クエリに変換
+    private async createAudioQuery(text: string): Promise<Record<string, unknown>> {
         const queryResponse = await fetch(
             `${this.baseUrl}/audio_query?speaker=${this.speakerId}&text=${encodeURIComponent(text)}`,
             {
@@ -39,7 +44,8 @@ export class VoiceVoxManager {
         return queryResponse.json();
     }
 
-    private async synthesizeAudio(query: any): Promise<ArrayBuffer> {
+    // 音声クエリから音声を生成
+    private async synthesizeAudio(query: Record<string, unknown>): Promise<ArrayBuffer> {
         const synthesisResponse = await fetch(
             `${this.baseUrl}/synthesis?speaker=${this.speakerId}`,
             {
@@ -58,6 +64,7 @@ export class VoiceVoxManager {
         return synthesisResponse.arrayBuffer();
     }
 
+    // 音声をファイルに保存
     private async saveAudioToFile(audioBuffer: ArrayBuffer): Promise<string> {
         const buffer = Buffer.from(audioBuffer);
         const absoluteOutputPath = resolve(this.audioDir, `voice_${Date.now()}.wav`);
@@ -65,6 +72,7 @@ export class VoiceVoxManager {
         return absoluteOutputPath;
     }
 
+    // 音声ファイルのパスを取得
     public async getAudioFilePath(text: string): Promise<string> {
         try {
             // テキストを音声クエリに変換
@@ -84,14 +92,7 @@ export class VoiceVoxManager {
         }
     }
 
-    public async playAudio(filePath: string): Promise<void> {
-        this.audioPlayer.play(filePath, (err: Error | null) => {
-            if (err) {
-                console.error('音声再生エラー:', err);
-            }
-        });
-    }
-
+    // 音声ファイルの削除
     public async cleanup(filePath: string): Promise<void> {
         try {
             await fs.unlink(filePath);
@@ -99,12 +100,4 @@ export class VoiceVoxManager {
             console.error('ファイル削除エラー:', error);
         }
     }
-
-    // public async cleanup(filePath: string): Promise<void> {
-    //     try {
-    //         await fs.promises.unlink(filePath);
-    //     } catch (error) {
-    //         console.error('ファイル削除エラー:', error);
-    //     }
-    // }
 } 
