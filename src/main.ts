@@ -1,32 +1,49 @@
 //必要なパッケージをインポートする
-import { GatewayIntentBits, Client, Partials, Message, CommandInteraction, ApplicationCommandOptionType } from 'discord.js';
-import { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, VoiceConnectionStatus, entersState } from '@discordjs/voice';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { VoiceVoxModel } from './voicevox';
+import { GatewayIntentBits, Client, Partials, CommandInteraction, ApplicationCommandOptionType } from 'discord.js';
+import { joinVoiceChannel, VoiceConnectionStatus, entersState } from '@discordjs/voice';
+
+import { AudioPlayerModel } from './audioPlayer';
+import { GeminiModel } from './gemini';
 import 'dotenv/config';
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildVoiceStates
-  ],
-  partials: [Partials.Message, Partials.Channel],
+    intents: [
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates
+    ],
+    partials: [Partials.Message, Partials.Channel],
 });
 
-const genAI = new GoogleGenerativeAI(
-  process.env.GEMINI_API_KEY!
-);
+const audioPlayer = new AudioPlayerModel();
+const gemini = new GeminiModel();
 
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash",
-  generationConfig: { responseMimeType: "application/json" }
-});
+// ボイスチャンネルの確認を行う共通関数
+async function checkVoiceChannel(interaction: CommandInteraction): Promise<boolean> {
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const voiceChannel = member?.voice.channel;
 
-const voiceVox = new VoiceVoxModel();
+    if (!voiceChannel) {
+        await interaction.reply('先にボイスチャンネルに参加してください！');
+        return false;
+    }
+    return true;
+}
+
+// ボイスチャンネルへの接続を行う共通関数
+function createVoiceConnection(interaction: CommandInteraction) {
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const voiceChannel = member?.voice.channel;
+
+    return joinVoiceChannel({
+        channelId: voiceChannel!.id,
+        guildId: interaction.guildId!,
+        adapterCreator: interaction.guild!.voiceAdapterCreator
+    });
+}
 
 //Botがきちんと起動したか確認
 client.once('ready', () => {
@@ -75,191 +92,104 @@ client.once('ready', () => {
             name: 'leave',
             description: 'メイドをボイスチャンネルから退出させます'
         }
-    ], process.env.DISCORD_SERVER_ID!); //TODO: 開発版とリリース版で設定を変更する
-})
+    ], process.env.DISCORD_SERVER_ID!);
+});
 
 // スラッシュコマンドの処理
 client.on('interactionCreate', async (interaction) => {
-    console.log(interaction);
     if (!interaction.isCommand()) return;
     
     const { commandName } = interaction;
 
-    // コマンド処理
-    switch (commandName) {
-        case 'chat':
-            await handleChatCommand(interaction);
-            break;
-        case 'voice_chat':
-            await handleVoiceChatCommand(interaction);
-            break;
-        case 'join':
-            await handleJoinCommand(interaction);
-            break;
-        case 'speak':
-            await handleSpeakCommand(interaction);
-            break;
-        case 'leave':
-            await handleLeaveCommand(interaction);
-            break;
+    try {
+        switch (commandName) {
+            case 'chat':
+                await handleChatCommand(interaction);
+                break;
+            case 'voice_chat':
+                await handleVoiceChatCommand(interaction);
+                break;
+            case 'join':
+                await handleJoinCommand(interaction);
+                break;
+            case 'speak':
+                await handleSpeakCommand(interaction);
+                break;
+            case 'leave':
+                await handleLeaveCommand(interaction);
+                break;
+        }
+    } catch (error) {
+        console.error('コマンド実行中にエラーが発生しました:', error);
+        await interaction.reply('コマンドの実行中にエラーが発生しました。');
     }
 });
 
 // chatコマンドの処理
-async function handleChatCommand(interaction: CommandInteraction) {
+async function handleChatCommand(interaction: CommandInteraction): Promise<void> {
     const content = interaction.options.get('text')?.value as string;
-    const result = await model.generateContent([
-        `あなたは親切なメイドAIです。以下の会話に日本語で返答してください。二人称は常にご主人様でお願いします。会話内容:${content}`
-    ]);
-    const json = JSON.parse(result.response.text());
-
-    if (json["response"] == null) {
-        await interaction.reply('エラーが発生しました。');
-        return;
-    }
-
-    const response = json["response"];
+    const response = await gemini.getGeminiResponse(content);
     await interaction.reply(response);
 }
 
 // voice_chatコマンドの処理
-async function handleVoiceChatCommand(interaction: CommandInteraction) {
-    // ユーザーがボイスチャンネルにいるか確認
-    const member = interaction.guild?.members.cache.get(interaction.user.id);
-    const voiceChannel = member?.voice.channel;
-
-    if (!voiceChannel) {
-        await interaction.reply('先にボイスチャンネルに参加してください！');
-        return;
-    }
+async function handleVoiceChatCommand(interaction: CommandInteraction): Promise<void> {
+    if (!await checkVoiceChannel(interaction)) return;
 
     const content = interaction.options.get('text')?.value as string;
-    const result = await model.generateContent([
-        `あなたは親切なメイドAIです。以下の質問に日本語で答えてください。二人称は常にご主人様でお願いします。${content}`
-    ]);
-    const json = JSON.parse(result.response.text());
-
-    if (json["response"] == null) {
-        await interaction.reply('エラーが発生しました。');
-        return;
-    }
-
-    const response = json["response"];
+    const response = await gemini.getGeminiResponse(content);
 
     try {
         await interaction.reply('返答中...');
-
-        // ボイスチャンネルに参加
-        const connection = joinVoiceChannel({
-            channelId: voiceChannel.id,
-            guildId: interaction.guildId!,
-            adapterCreator: interaction.guild!.voiceAdapterCreator
-        });
-
-        // 音声プレイヤーの作成
-        const player = createAudioPlayer();
-        connection.subscribe(player);
-
-        const audioPath = await voiceVox.getAudioFilePath(response);
-        const resource = createAudioResource(audioPath);
-        player.play(resource);
-
-        // 再生終了時の処理
-        player.on(AudioPlayerStatus.Idle, async () => {
-            console.log('音声再生が終了しました');
-            await voiceVox.cleanup(audioPath);
-        });
-  
+        const connection = createVoiceConnection(interaction);
+        await audioPlayer.textToSpeech(response, connection);
     } catch (error) {
-        console.error(error);
+        console.error('音声チャット中にエラーが発生しました:', error);
         await interaction.reply('音声再生中にエラーが発生しました。');
     }
 }
 
 // joinコマンドの処理
-async function handleJoinCommand(interaction: CommandInteraction) {
-    // ユーザーがボイスチャンネルにいるか確認
-    const member = interaction.guild?.members.cache.get(interaction.user.id);
-    const voiceChannel = member?.voice.channel;
-  
-    if (!voiceChannel) {
-        await interaction.reply('先にボイスチャンネルに参加してください！');
-        return;
-    }
-  
+async function handleJoinCommand(interaction: CommandInteraction): Promise<void> {
+    if (!await checkVoiceChannel(interaction)) return;
+
     try {
-        // ボイスチャンネルに参加
-        const connection = joinVoiceChannel({
-            channelId: voiceChannel.id,
-            guildId: interaction.guildId!,
-            adapterCreator: interaction.guild!.voiceAdapterCreator,
-        });
-
-        // 接続状態を確認
+        const connection = createVoiceConnection(interaction);
         await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
-        await interaction.reply(`${voiceChannel.name} に参加しました！`);
-
+        const member = interaction.guild?.members.cache.get(interaction.user.id);
+        await interaction.reply(`${member?.voice.channel?.name} に参加しました！`);
     } catch (error) {
-      console.error(error);
-      await interaction.reply('ボイスチャンネルへの参加中にエラーが発生しました。');
+        console.error('ボイスチャンネル参加中にエラーが発生しました:', error);
+        await interaction.reply('ボイスチャンネルへの参加中にエラーが発生しました。');
     }
 }
 
 // speakコマンドの処理
-async function handleSpeakCommand(interaction: CommandInteraction) {
+async function handleSpeakCommand(interaction: CommandInteraction): Promise<void> {
+    if (!await checkVoiceChannel(interaction)) return;
+
     const text = interaction.options.get('text')?.value as string;
-    
-    // ユーザーがボイスチャンネルにいるか確認
-    const member = interaction.guild?.members.cache.get(interaction.user.id);
-    const voiceChannel = member?.voice.channel;
-  
-    if (!voiceChannel) {
-        await interaction.reply('先にボイスチャンネルに参加してください！');
-        return;
-    }
-  
+
     try {
         await interaction.reply(`「${text}」を読み上げています...`);
-
-        // ボイスチャンネルに参加
-        const connection = joinVoiceChannel({
-            channelId: voiceChannel.id,
-            guildId: interaction.guildId!,
-            adapterCreator: interaction.guild!.voiceAdapterCreator
-        });
-
-        // 音声プレイヤーの作成
-        const player = createAudioPlayer();
-        connection.subscribe(player);
-
-        // ここで実際にはテキストを音声に変換する処理が必要
-        const audioPath = await voiceVox.getAudioFilePath(text);
-        const resource = createAudioResource(audioPath);
-        player.play(resource);
-
-        // 再生終了時の処理
-        player.on(AudioPlayerStatus.Idle, async () => {
-            console.log('音声再生が終了しました');
-            await voiceVox.cleanup(audioPath);
-        });
-  
+        const connection = createVoiceConnection(interaction);
+        await audioPlayer.textToSpeech(text, connection);
     } catch (error) {
-        console.error(error);
+        console.error('音声再生中にエラーが発生しました:', error);
         await interaction.reply('音声再生中にエラーが発生しました。');
     }
 }
 
 // leaveコマンドの処理
-async function handleLeaveCommand(interaction: CommandInteraction) {
+async function handleLeaveCommand(interaction: CommandInteraction): Promise<void> {
     const guild = interaction.guild;
     if (!guild) {
         await interaction.reply('サーバー内でのみ使用できるコマンドです。');
         return;
     }
   
-    // 現在の接続を確認
     const connection = joinVoiceChannel({
-        channelId: '0', // ダミーID
+        channelId: '0',
         guildId: guild.id,
         adapterCreator: guild.voiceAdapterCreator,
     });
@@ -268,6 +198,5 @@ async function handleLeaveCommand(interaction: CommandInteraction) {
     await interaction.reply('ボイスチャンネルから退出しました。');
 }
 
-
-//ボット作成時のトークンでDiscordと接続
+// ボット作成時のトークンでDiscordと接続
 client.login(process.env.DISCORD_TOKEN);
