@@ -1,10 +1,6 @@
-//必要なパッケージをインポートする
-import { GatewayIntentBits, Client, Partials, CommandInteraction, ApplicationCommandOptionType } from 'discord.js';
-import { joinVoiceChannel, VoiceConnectionStatus, entersState } from '@discordjs/voice';
+import { GatewayIntentBits, Client, Partials, ApplicationCommandOptionType } from 'discord.js';
 
-import { AudioPlayerModel } from './audioPlayer';
-import { GeminiModel } from './gemini';
-import 'dotenv/config';
+import { DiscordBot } from './discordBot';
 
 const client = new Client({
     intents: [
@@ -18,32 +14,7 @@ const client = new Client({
     partials: [Partials.Message, Partials.Channel],
 });
 
-const audioPlayer = new AudioPlayerModel();
-const gemini = new GeminiModel();
-
-// ボイスチャンネルの確認を行う共通関数
-async function checkVoiceChannel(interaction: CommandInteraction): Promise<boolean> {
-    const member = interaction.guild?.members.cache.get(interaction.user.id);
-    const voiceChannel = member?.voice.channel;
-
-    if (!voiceChannel) {
-        await interaction.reply('先にボイスチャンネルに参加してください！');
-        return false;
-    }
-    return true;
-}
-
-// ボイスチャンネルへの接続を行う共通関数
-function createVoiceConnection(interaction: CommandInteraction) {
-    const member = interaction.guild?.members.cache.get(interaction.user.id);
-    const voiceChannel = member?.voice.channel;
-
-    return joinVoiceChannel({
-        channelId: voiceChannel!.id,
-        guildId: interaction.guildId!,
-        adapterCreator: interaction.guild!.voiceAdapterCreator
-    });
-}
+const discordBot = new DiscordBot();
 
 //Botがきちんと起動したか確認
 client.once('ready', () => {
@@ -104,19 +75,19 @@ client.on('interactionCreate', async (interaction) => {
     try {
         switch (commandName) {
             case 'chat':
-                await handleChatCommand(interaction);
+                await discordBot.handleChatCommand(interaction);
                 break;
             case 'voice_chat':
-                await handleVoiceChatCommand(interaction);
+                await discordBot.handleVoiceChatCommand(interaction);
                 break;
             case 'join':
-                await handleJoinCommand(interaction);
+                await discordBot.handleJoinCommand(interaction);
                 break;
             case 'speak':
-                await handleSpeakCommand(interaction);
+                await discordBot.handleSpeakCommand(interaction);
                 break;
             case 'leave':
-                await handleLeaveCommand(interaction);
+                await discordBot.handleLeaveCommand(interaction);
                 break;
         }
     } catch (error) {
@@ -124,79 +95,6 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.reply('コマンドの実行中にエラーが発生しました。');
     }
 });
-
-// chatコマンドの処理
-async function handleChatCommand(interaction: CommandInteraction): Promise<void> {
-    const content = interaction.options.get('text')?.value as string;
-    const response = await gemini.getGeminiResponse(content);
-    await interaction.reply(response);
-}
-
-// voice_chatコマンドの処理
-async function handleVoiceChatCommand(interaction: CommandInteraction): Promise<void> {
-    if (!await checkVoiceChannel(interaction)) return;
-
-    const content = interaction.options.get('text')?.value as string;
-    const response = await gemini.getGeminiResponse(content);
-
-    try {
-        await interaction.reply('返答中...');
-        const connection = createVoiceConnection(interaction);
-        await audioPlayer.textToSpeech(response, connection);
-    } catch (error) {
-        console.error('音声チャット中にエラーが発生しました:', error);
-        await interaction.reply('音声再生中にエラーが発生しました。');
-    }
-}
-
-// joinコマンドの処理
-async function handleJoinCommand(interaction: CommandInteraction): Promise<void> {
-    if (!await checkVoiceChannel(interaction)) return;
-
-    try {
-        const connection = createVoiceConnection(interaction);
-        await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
-        const member = interaction.guild?.members.cache.get(interaction.user.id);
-        await interaction.reply(`${member?.voice.channel?.name} に参加しました！`);
-    } catch (error) {
-        console.error('ボイスチャンネル参加中にエラーが発生しました:', error);
-        await interaction.reply('ボイスチャンネルへの参加中にエラーが発生しました。');
-    }
-}
-
-// speakコマンドの処理
-async function handleSpeakCommand(interaction: CommandInteraction): Promise<void> {
-    if (!await checkVoiceChannel(interaction)) return;
-
-    const text = interaction.options.get('text')?.value as string;
-
-    try {
-        await interaction.reply(`「${text}」を読み上げています...`);
-        const connection = createVoiceConnection(interaction);
-        await audioPlayer.textToSpeech(text, connection);
-    } catch (error) {
-        console.error('音声再生中にエラーが発生しました:', error);
-        await interaction.reply('音声再生中にエラーが発生しました。');
-    }
-}
-
-// leaveコマンドの処理
-async function handleLeaveCommand(interaction: CommandInteraction): Promise<void> {
-    const guild = interaction.guild;
-    if (!guild) {
-        await interaction.reply('サーバー内でのみ使用できるコマンドです。');
-        return;
-    }
-  
-    const connection = joinVoiceChannel({
-        channelId: '0',
-        guildId: guild.id,
-        adapterCreator: guild.voiceAdapterCreator,
-    });
-  
-    connection.destroy();
-    await interaction.reply('ボイスチャンネルから退出しました。');
-}
 
 // ボット作成時のトークンでDiscordと接続
 client.login(process.env.DISCORD_TOKEN);
