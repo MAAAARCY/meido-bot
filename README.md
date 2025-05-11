@@ -6,37 +6,51 @@
     - `/chat` : テキストベースで会話ができます
     - `/voice_chat` : ボイスチャンネル内で会話ができます
 ## セットアップ
-- .envファイルを作成し以下のように設定してください
+### Dockerの設定（直接VOICEVOXを立ち上げる場合は必要なし）
+- Dockerの環境構築をする（[公式ドキュメント](https://docs.docker.com/engine/install/ubuntu/)）
+- ※WSL版のDockerでgpuを使用する場合は[Nvidia Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)の設定も行う
+    - [Configure Docker](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html#:~:text=NVIDIA%20Container%20Toolkit.-,Configuring%20Docker,-%23)に詳しい設定方法が書いてあります
+    - この設定を行わないと下記のようなエラーがでる可能性があります
+```shell
+Error response from daemon: could not select device driver "" with capabilities: [[gpu]].
+```
+
+- voicevox_engineを`docker pull`して`docker run`
+```shell
+# CPU版
+docker pull voicevox/voicevox_engine:cpu-ubuntu20.04-latest
+docker run --rm -it -p '127.0.0.1:50021:50021' voicevox/voicevox_engine:cpu-ubuntu20.04-latest
+# GPU版
+docker pull voicevox/voicevox_engine:nvidia-ubuntu20.04-latest
+docker run --rm --gpus all -p '127.0.0.1:50021:50021' voicevox/voicevox_engine:nvidia-ubuntu20.04-latest
+```
+### Discord BOTの設定
+- [Node.js](https://nodejs.org/ja/download)をダウンロードする
+- [DiscordDeveloperPortal](https://discord.com/developers/docs/quick-start/getting-started)の`Create App`から`meido-bot`を作成する
+
+- .envファイルを作成する
+    - DISCORD_TOKENは[DiscordDeveloperPortal](https://discord.com/developers/docs/quick-start/getting-started)から取得できます。
+        - YOUR_BOT_TOKENの設定のみ行ってください(YOUR_APP_ID, YOUR_PUBLIC_KEYは不要です)
+        - DISCORD_TOKENはYOUR_BOT_TOKENの事を指しています
+
+    - GEMINI_API_KEYは[ここ](https://aistudio.google.com/prompts/new_chat)から取得できます。
 ```
 DISCORD_TOKEN = 'トークンを入力'
 DISCORD_SERVER_ID = 'Botを導入したいサーバーのID(ローカル環境のみ使用)'
 GEMINI_API_KEY = 'GEMINIのAPIキーを入力'
 VOICEVOX_API_URL = 'VOICEVOXのサーバーURL(デフォルトはhttp://localhost:50021)'
 ```
-
-- DISCORD_TOKENを取得する手順は以下のサイトから確認できます．
-    - https://discord.com/developers/docs/quick-start/getting-started
-    - YOUR_BOT_TOKENの設定のみ行ってください(YOUR_APP_ID, YOUR_PUBLIC_KEYは不要です)
-    - DISCORD_TOKENはYOUR_BOT_TOKENの事を指しています
-
-- GEMINI_API_KEYは以下のサイトから取得できます．
-    - https://aistudio.google.com/prompts/new_chat
-
-- 作成した.envファイルを`meido-bot`フォルダのルートに配置
-- `meido-bot`フォルダ内で以下のコマンドを実行
-```
+- 作成した.envファイルを`meido-bot`フォルダのルートに配置する
+- `meido-bot`フォルダ内で下記のコマンドを実行する
+```shell
 npm init
-
 npm install
-
 npm run compile
-
 npm run start
 ```
 
 ## 注意点
-- node, npmの環境構築を先に済ませてください
-- VOICEVOXが立ち上がっていない状態で`/voice_chat`を使用すると音声合成のタイミングでエラーになります(将来的にDockerに移行予定)
+- VOICEVOX APIが立ち上がっていない状態で`/voice_chat`または`/speak`を使用すると音声合成のタイミングでエラーになります
 
 [使用音声]
 &copy; VOICEVOX：冥鳴ひまり
