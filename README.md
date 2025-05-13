@@ -24,9 +24,12 @@ docker run --rm -it -p '127.0.0.1:50021:50021' voicevox/voicevox_engine:cpu-ubun
 docker pull voicevox/voicevox_engine:nvidia-ubuntu20.04-latest
 docker run --rm --gpus all -p '127.0.0.1:50021:50021' voicevox/voicevox_engine:nvidia-ubuntu20.04-latest
 ```
+- ここまで何もエラーが無ければ、[VOICEVOX API](http://localhost:50021)が起動する
+
 ### Discord BOTの設定
 - [Node.js](https://nodejs.org/ja/download)をダウンロードする
 - [DiscordDeveloperPortal](https://discord.com/developers/docs/quick-start/getting-started)の`Create App`から`meido-bot`を作成する
+- 作成した`meido-bot`をサーバーに招待する
 
 - .envファイルを作成する
     - DISCORD_TOKENは[DiscordDeveloperPortal](https://discord.com/developers/docs/quick-start/getting-started)から取得できます。
@@ -40,14 +43,15 @@ DISCORD_SERVER_ID = 'Botを導入したいサーバーのID(ローカル環境�
 GEMINI_API_KEY = 'GEMINIのAPIキーを入力'
 VOICEVOX_API_URL = 'VOICEVOXのサーバーURL(デフォルトはhttp://localhost:50021)'
 ```
-- 作成した.envファイルを`meido-bot`フォルダのルートに配置する
-- `meido-bot`フォルダ内で下記のコマンドを実行する
+- 作成した.envファイルを`src`フォルダより上の階層(ルート)に配置する
+- 下記のコマンドを実行する
 ```shell
 npm init
 npm install
 npm run compile
 npm run start
 ```
+- `meido-bot`がオンラインになれば成功
 
 ## 注意点
 - VOICEVOX APIが立ち上がっていない状態で`/voice_chat`または`/speak`を使用すると音声合成のタイミングでエラーになります
