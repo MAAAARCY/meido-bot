@@ -31,7 +31,7 @@ docker run --rm --gpus all -p '127.0.0.1:50021:50021' voicevox/voicevox_engine:n
 - [DiscordDeveloperPortal](https://discord.com/developers/docs/quick-start/getting-started)の`Create App`から`meido-bot`を作成します
 - 作成した`meido-bot`をサーバーに招待します
 
-- .envファイルを作成する
+- .envファイルを以下の構成で設定します
     - DISCORD_TOKENは[DiscordDeveloperPortal](https://discord.com/developers/docs/quick-start/getting-started)から取得できます
         - YOUR_BOT_TOKENの設定のみ行ってください(YOUR_APP_ID, YOUR_PUBLIC_KEYは不要です)
         - DISCORD_TOKENはYOUR_BOT_TOKENの事を指しています
