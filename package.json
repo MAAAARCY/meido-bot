@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "ts-node src/main.ts",
-    "start": "node build/main.js",
+    "test": "vitest",
+    "start": "node build/src/main.js",
     "compile": "tsc -p ."
   },
   "keywords": [],
@@ -19,7 +19,8 @@
     "globals": "^16.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.32.0"
+    "typescript-eslint": "^8.32.0",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "@discordjs/voice": "^0.18.0",
