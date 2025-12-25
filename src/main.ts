@@ -68,7 +68,7 @@ client.once('ready', () => {
 
 // スラッシュコマンドの処理
 client.on('interactionCreate', async (interaction) => {
-    if (!interaction.isCommand()) return;
+    if (!interaction.isChatInputCommand()) return;
     
     const { commandName } = interaction;
 
