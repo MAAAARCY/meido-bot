@@ -9,3 +9,5 @@ build/
 eslint.json
 
 coverage/
+docs/
+coverage/
