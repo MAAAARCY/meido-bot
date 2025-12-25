@@ -5,7 +5,8 @@
   "scripts": {
     "test": "vitest",
     "start": "node build/src/main.js",
-    "compile": "tsc -p ."
+    "compile": "tsc -p .",
+    "lint": "eslint . --ext .ts"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +20,7 @@
     "globals": "^16.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.32.0",
+    "typescript-eslint": "^8.50.1",
     "vitest": "^4.0.16"
   },
   "dependencies": {

@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VoiceVoxModel } from '../src/voicevox';
 import * as fs from 'node:fs/promises';
-import { resolve } from 'node:path';
 
 // fsモジュールをモック
 vi.mock('node:fs/promises');

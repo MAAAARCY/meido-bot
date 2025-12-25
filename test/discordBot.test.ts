@@ -49,8 +49,8 @@ describe('DiscordBot', () => {
         
         mockInteraction = {
             options: {
-                get: vi.fn((key: string) => ({ value: 'テストテキスト' })),
-                getString: vi.fn((key: string) => 'テストテキスト'),
+                get: vi.fn((_key: string) => ({ value: 'テストテキスト' })),
+                getString: vi.fn((_key: string) => 'テストテキスト'),
             },
             reply: vi.fn(),
             user: { id: 'user123' },

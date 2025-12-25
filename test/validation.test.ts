@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ValidationModel } from '../src/validation';
-import { CommandInteraction } from 'discord.js';
 
 describe('ValidationModel', () => {
     let validation: ValidationModel;
