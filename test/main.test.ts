@@ -27,6 +27,7 @@ beforeEach(() => {
                 application = { commands: { set: vi.fn().mockResolvedValue(undefined) } };
 
                 constructor() {
+                    // eslint-disable-next-line @typescript-eslint/no-this-alias
                     clientInstance = this;
                 }
             },
