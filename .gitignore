@@ -4,8 +4,6 @@ audio/
 .env
 .env.*
 
-package-lock.json
-
 build/ 
 
 eslint.json
