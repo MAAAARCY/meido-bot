@@ -1,5 +1,5 @@
 import { joinVoiceChannel, VoiceConnection, VoiceConnectionStatus, entersState } from "@discordjs/voice";
-import { CommandInteraction } from "discord.js";
+import { ChatInputCommandInteraction } from "discord.js";
 
 import { ValidationModel } from './validation';
 import { AudioPlayerModel } from './audioPlayer';
@@ -20,7 +20,7 @@ export class DiscordBot {
     }
 
     // ボイスチャンネルへの接続を行う関数
-    public createVoiceConnection(interaction: CommandInteraction) : VoiceConnection {
+    public createVoiceConnection(interaction: ChatInputCommandInteraction) : VoiceConnection {
         const member = interaction.guild?.members.cache.get(interaction.user.id);
         const voiceChannel = member?.voice.channel;
 
@@ -32,14 +32,14 @@ export class DiscordBot {
     }
 
     // chatコマンドの処理
-    public async handleChatCommand(interaction: CommandInteraction): Promise<void> {
+    public async handleChatCommand(interaction: ChatInputCommandInteraction): Promise<void> {
         const content = interaction.options.get('text')?.value as string;
         const response = await this.gemini.getGeminiResponse(content);
         await interaction.reply(response);
     }
 
     // voice_chatコマンドの処理
-    public async handleVoiceChatCommand(interaction: CommandInteraction): Promise<void> {
+    public async handleVoiceChatCommand(interaction: ChatInputCommandInteraction): Promise<void> {
         if (!await this.validation.checkVoiceChannel(interaction)) return;
 
         const content = interaction.options.get('text')?.value as string;
@@ -56,7 +56,7 @@ export class DiscordBot {
     }
 
     // joinコマンドの処理
-    public async handleJoinCommand(interaction: CommandInteraction): Promise<void> {
+    public async handleJoinCommand(interaction: ChatInputCommandInteraction): Promise<void> {
         if (!await this.validation.checkVoiceChannel(interaction)) return;
 
         try {
@@ -71,7 +71,7 @@ export class DiscordBot {
     }
 
     // speakコマンドの処理
-    public async handleSpeakCommand(interaction: CommandInteraction): Promise<void> {
+    public async handleSpeakCommand(interaction: ChatInputCommandInteraction): Promise<void> {
         if (!await this.validation.checkVoiceChannel(interaction)) return;
 
         const text = interaction.options.get('text')?.value as string;
@@ -87,7 +87,7 @@ export class DiscordBot {
     }
 
     // leaveコマンドの処理
-    public async handleLeaveCommand(interaction: CommandInteraction): Promise<void> {
+    public async handleLeaveCommand(interaction: ChatInputCommandInteraction): Promise<void> {
         const guild = interaction.guild;
         if (!guild) {
             await interaction.reply('サーバー内でのみ使用できるコマンドです。');
